@@ -66,12 +66,13 @@
             const product = products[i];
             const shipmentPrice = totalShipmentPrice * (product.quantity / totalQuantity);
             const newPrice = product.price + shipmentPrice / product.quantity;
+            const newPriceRounded = Math.round(newPrice * 1000) / 1000;
             const resultTr = document.createElement('tr');
             const resultNameTd = document.createElement('td');
             resultNameTd.textContent = product.productName;
             resultNameTd.style.padding = '0 5px';
             const resultPriceTd = document.createElement('td');
-            resultPriceTd.textContent = `$${newPrice}`;
+            resultPriceTd.textContent = `$${newPriceRounded}`;
             resultPriceTd.style.padding = '0 5px';
             resultTr.append(resultNameTd);
             resultTr.append(resultPriceTd);
