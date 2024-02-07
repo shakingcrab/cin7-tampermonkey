@@ -41,7 +41,7 @@
         const products = [];
         let totalQuantity = 0;
         for (const order of orders) {
-            const productNameBlock = order.querySelector('.product-text span span');
+            const productNameBlock = order.querySelector('.product-text span span') || order.querySelector('deartooltip productname');
             const productName = productNameBlock.textContent;
             const unitBlock = order.querySelector('.x-grid-cell-colUnitOfMeasure_OrderLines');
             const unit = unitBlock.textContent;
@@ -69,8 +69,10 @@
             const resultTr = document.createElement('tr');
             const resultNameTd = document.createElement('td');
             resultNameTd.textContent = product.productName;
+            resultNameTd.style.padding = '0 5px';
             const resultPriceTd = document.createElement('td');
             resultPriceTd.textContent = `$${newPrice}`;
+            resultPriceTd.style.padding = '0 5px';
             resultTr.append(resultNameTd);
             resultTr.append(resultPriceTd);
             resultTable.querySelector('tbody').append(resultTr);
@@ -95,11 +97,14 @@
                     const form = document.createElement('form');
 
                     const resultTable = document.createElement('table');
+                    resultTable.style.width = '100%';
                     const resultHeader = document.createElement('thead');
                     const resultNameTh = document.createElement('th');
+                    resultNameTh.style.padding = '0 5px';
                     resultNameTh.textContent = 'Name';
                     const resultPriceTh = document.createElement('th');
                     resultPriceTh.textContent = 'Price';
+                    resultPriceTh.style.padding = '0 5px';
                     const resultBody = document.createElement('tbody');
                     resultHeader.append(resultNameTh);
                     resultHeader.append(resultPriceTh);
@@ -129,21 +134,26 @@
                         return false;
                     });
                     const table = document.createElement('table');
+                    table.style.width = '100%';
                     const header = document.createElement('thead');
                     const checkTh = document.createElement('th');
                     checkTh.textContent = 'Select';
+                    checkTh.style.padding = '0 5px';
                     checkTh.style.borderBottom = '1px solid #e0e0e0';
                     checkTh.style.textAlign = 'center';
                     const vendorTh = document.createElement('th');
                     vendorTh.textContent = 'Vendor';
+                    vendorTh.style.padding = '0 5px';
                     vendorTh.style.borderBottom = '1px solid #e0e0e0';
                     vendorTh.style.textAlign = 'center';
                     const dateTh = document.createElement('th');
                     dateTh.textContent = 'Date';
+                    dateTh.style.padding = '0 5px';
                     dateTh.style.borderBottom = '1px solid #e0e0e0';
                     dateTh.style.textAlign = 'center';
                     const priceTh = document.createElement('th');
                     priceTh.textContent = 'Price';
+                    priceTh.style.padding = '0 5px';
                     priceTh.style.borderBottom = '1px solid #e0e0e0';
                     priceTh.style.textAlign = 'center';
                     header.append(checkTh);
@@ -160,24 +170,28 @@
                         checkInput.value = shipment.PK;
                         checkInput.name = 'shipment';
                         checkTd.append(checkInput);
+                        checkTd.style.padding = '0 5px';
                         checkTd.style.textAlign = 'center';
                         checkTd.style.borderBottom = '1px solid #e0e0e0';
                         tr.append(checkTd);
                         // add vendor
                         const vendorTd = document.createElement('td');
                         vendorTd.textContent = shipment.vendor;
+                        vendorTd.style.padding = '0 5px';
                         vendorTd.style.borderBottom = '1px solid #e0e0e0';
                         vendorTd.style.textAlign = 'center';
                         tr.append(vendorTd);
                         // add date
                         const dateTd = document.createElement('td');
                         dateTd.textContent = shipment.shipmentCreatedDate;
+                        dateTd.style.padding = '0 5px';
                         dateTd.style.borderBottom = '1px solid #e0e0e0';
                         dateTd.style.textAlign = 'center';
                         tr.append(dateTd);
                         // add price
                         const priceTd = document.createElement('td');
                         priceTd.textContent = `$${shipment.price / 100}`;
+                        priceTd.style.padding = '0 5px';
                         priceTd.style.borderBottom = '1px solid #e0e0e0';
                         priceTd.style.textAlign = 'center';
                         tr.append(priceTd);
