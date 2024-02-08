@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cin7 extension
 // @namespace    https://bcosys.world/
-// @version      2024-02-08
+// @version      2024-02-08_2
 // @description  try to take over the world!
 // @author       Yihui Liu
 // @match        https://inventory.dearsystems.com/Purchase
@@ -171,7 +171,7 @@
                     dateTh.style.borderBottom = '1px solid #e0e0e0';
                     dateTh.style.textAlign = 'center';
                     const priceTh = document.createElement('th');
-                    priceTh.textContent = 'Price';
+                    priceTh.textContent = 'Total';
                     priceTh.style.padding = '0 5px';
                     priceTh.style.borderBottom = '1px solid #e0e0e0';
                     priceTh.style.textAlign = 'center';
@@ -222,7 +222,7 @@
                         tr.append(dateTd);
                         // add ref
                         const refTd = document.createElement('td');
-                        refTd.textContent = shipment.refs;
+                        refTd.textContent = shipment.ref;
                         refTd.style.padding = '0 5px';
                         refTd.style.borderBottom = '1px solid #e0e0e0';
                         refTd.style.textAlign = 'center';
@@ -293,7 +293,7 @@
         const dateInput = document.getElementById('dtDate');
 
         const shippingCosts = document.querySelectorAll('#divOrderAdditionalCostLines .x-grid-row');
-        const shippings = [];
+        const shipments = [];
         for (const shippingCost of shippingCosts) {
             const tds = shippingCost.querySelectorAll('td');
             const ref = tds[2].textContent;
@@ -306,7 +306,7 @@
                 price,
                 total,
             }
-            shippings.push(shipping);
+            shipments.push(shipping);
         }
 
         const vendor = vendorInput.value;
@@ -316,16 +316,11 @@
         dialog.setAttribute('open', true);
         dialog.style.zIndex = 999;
         const title = document.createElement('h2');
-        title.textContent = 'Do you want to add this shipment?'
+        title.textContent = 'Do you want to add following shipment(s)?'
         const form = document.createElement('form');
         const table = document.createElement('table');
         table.style.width = '100%';
         const header = document.createElement('thead');
-        const checkTh = document.createElement('th');
-        checkTh.textContent = 'Select';
-        checkTh.style.padding = '0 5px';
-        checkTh.style.borderBottom = '1px solid #e0e0e0';
-        checkTh.style.textAlign = 'center';
         const vendorTh = document.createElement('th');
         vendorTh.textContent = 'Vendor';
         vendorTh.style.padding = '0 5px';
@@ -356,7 +351,6 @@
         totalTh.style.padding = '0 5px';
         totalTh.style.borderBottom = '1px solid #e0e0e0';
         totalTh.style.textAlign = 'center';
-        header.append(checkTh);
         header.append(vendorTh);
         header.append(dateTh);
         header.append(refTh);
@@ -365,18 +359,8 @@
         header.append(totalTh);
         table.append(header);
         const body = document.createElement('tbody');
-        for (let i = 0; i < shippings.length; i++) {
+        for (let i = 0; i < shipments.length; i++) {
             const tr = document.createElement('tr');
-            const checkTd = document.createElement('td');
-            const checkInput = document.createElement('input');
-            checkInput.type = 'checkbox';
-            checkInput.value = i;
-            checkInput.name = 'shipment';
-            checkTd.append(checkInput);
-            checkTd.style.padding = '0 5px';
-            checkTd.style.textAlign = 'center';
-            checkTd.style.borderBottom = '1px solid #e0e0e0';
-            tr.append(checkTd);
             const vendorTd = document.createElement('td');
             vendorTd.textContent = vendor;
             vendorTd.style.padding = '0 5px';
@@ -390,25 +374,25 @@
             dateTd.style.textAlign = 'center';
             tr.append(dateTd);
             const refTd = document.createElement('td');
-            refTd.textContent = shippings[i].ref;
+            refTd.textContent = shipments[i].ref;
             refTd.style.padding = '0 5px';
             refTd.style.borderBottom = '1px solid #e0e0e0';
             refTd.style.textAlign = 'center';
             tr.append(refTd);
             const quantityTd = document.createElement('td');
-            quantityTd.textContent = shippings[i].quantity;
+            quantityTd.textContent = shipments[i].quantity;
             quantityTd.style.padding = '0 5px';
             quantityTd.style.borderBottom = '1px solid #e0e0e0';
             quantityTd.style.textAlign = 'center';
             tr.append(quantityTd);
             const priceTd = document.createElement('td');
-            priceTd.textContent = `$${shippings[i].price}`;
+            priceTd.textContent = `$${shipments[i].price}`;
             priceTd.style.padding = '0 5px';
             priceTd.style.borderBottom = '1px solid #e0e0e0';
             priceTd.style.textAlign = 'center';
             tr.append(priceTd);
             const totalTd = document.createElement('td');
-            totalTd.textContent = `$${shippings[i].total}`;
+            totalTd.textContent = `$${shipments[i].total}`;
             totalTd.style.padding = '0 5px';
             totalTd.style.borderBottom = '1px solid #e0e0e0';
             totalTd.style.textAlign = 'center';
@@ -433,48 +417,25 @@
 
         form.addEventListener('submit', (e) => {
            e.preventDefault();
-           const selectedShippings = [];
-           const checkboxes = form.querySelectorAll('input[name="shipment"]');
-           const refs = new Set();
-           let totalAmount = 0;
-           for (const checkbox of checkboxes) {
-               if (checkbox.checked) {
-                   selectedShippings.push(shippings[checkbox.value]);
-                   refs.add(shippings[checkbox.value].ref);
-                   totalAmount += shippings[checkbox.value].total;
-               }
+           for (const shipment of shipments) {
+                const shipmentData = {
+                     vendor,
+                     shipmentCreatedDate: date,
+                     ref: shipment.ref,
+                     quantity: shipment.quantity,
+                     unitPrice: shipment.price * 100,
+                     price: shipment.total * 100,
+                }
+
+                GM.xmlHttpRequest({
+                     method: 'POST',
+                     url: `${API_URL}/cin7/shipment`,
+                     data: JSON.stringify(shipmentData),
+                });
            }
 
-           const shipmentData = {
-                vendor,
-                shipmentCreatedDate: date,
-                refs: Array.from(refs).join(', '),
-                price: totalAmount * 100,
-           };
-
-           GM.xmlHttpRequest({
-               method: 'POST',
-               url: `${API_URL}/cin7/shipment`,
-               data: JSON.stringify(shipmentData),
-               onload: function (response) {
-                   console.log(response);
-                   if (response.status === 200) {
-                       const responseJSON = JSON.parse(response.response);
-                       console.log(responseJSON);
-
-                       // remove selected shippings from the table
-                       for (const checkbox of checkboxes) {
-                           if (checkbox.checked) {
-                               checkbox.parentElement.parentElement.remove();
-                           }
-                       }
-
-                       alert(responseJSON.message || 'Done');
-                   }
-               },
-           });
-
-
+           alert('Done');
+           dialog.close();
            return false;
         });
 
