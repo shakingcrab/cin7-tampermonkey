@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cin7 extension
 // @namespace    https://bcosys.world/
-// @version      2024-02-08_2
+// @version      2024-02-08_3
 // @description  try to take over the world!
 // @author       Yihui Liu
 // @match        https://inventory.dearsystems.com/Purchase
@@ -132,24 +132,6 @@
                         const totalShipmentPrice = selectedShipments.reduce((acc, shipment) => acc + shipment.price, 0) / 100;
                         includeShipmentPrice(totalShipmentPrice, resultTable);
 
-                        // remove selected shipments from the table
-                        for (const checkbox of checkboxes) {
-                            if (checkbox.checked) {
-                                const selectedShipmentPK = checkbox.value;
-                                GM.xmlHttpRequest({
-                                    method: 'DELETE',
-                                    url: `${API_URL}/cin7/shipment/${selectedShipmentPK.split('#')[1]}`,
-                                    onload: function (response) {
-                                        console.log(response);
-                                        if (response.status === 200) {
-                                            checkbox.parentElement.parentElement.remove();
-                                        }
-                                    },
-                                });
-                            }
-                        }
-                        alert('Done');
-
                         return false;
                     });
                     const table = document.createElement('table');
@@ -267,6 +249,35 @@
                     includeButton.value = 'Calculate';
                     includeButton.type = 'submit';
                     includeButton.className = 'btn btn-primary';
+                    const saveButton = document.createElement('button');
+                    saveButton.textContent = 'Save';
+                    saveButton.className = 'btn btn-outline';
+                    saveButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        // get selected checkbox
+                        const checkboxes = form.querySelectorAll('input[name="shipment"]');
+                        for (const checkbox of checkboxes) {
+                            if (checkbox.checked) {
+                                const shipmentPK = checkbox.value;
+                                // delete shipment
+                                GM.xmlHttpRequest({
+                                    method: 'DELETE',
+                                    url: `${API_URL}/cin7/shipment/${shipmentPK.split('#')[1]}`,
+                                    onload: function (response) {
+                                        console.log(response);
+                                        if (response.status === 200) {
+                                            checkbox.parentElement.parentElement.remove();
+                                        }
+                                    },
+                                });
+                            }
+                        }
+
+                        alert('Saved');
+                        dialog.close();
+                    });
+
+
                     const cancelButton = document.createElement('button');
                     cancelButton.textContent = 'Cancel';
                     cancelButton.className = 'btn btn-outline';
@@ -275,6 +286,7 @@
                         dialog.close();
                     });
                     buttonGroup.append(includeButton);
+                    buttonGroup.append(saveButton);
                     buttonGroup.append(cancelButton);
 
                     form.append(table);
