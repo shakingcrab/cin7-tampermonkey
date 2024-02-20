@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cin7 extension
 // @namespace    https://bcosys.world/
-// @version      2024-02-08_3
+// @version      2024-02-20
 // @description  try to take over the world!
 // @author       Yihui Liu
 // @match        https://inventory.dearsystems.com/Purchase
@@ -44,7 +44,9 @@
         let totalQuantity = 0;
         for (const order of orders) {
             const productNameBlock = order.querySelector('.product-text span span') || order.querySelector('deartooltip productname');
-            const productName = productNameBlock.textContent;
+            const productName = productNameBlock?.textContent;
+            const productIdBlock = order.querySelector('deartooltip productid');
+            const productId = productIdBlock?.textContent;
             const unitBlock = order.querySelector('.x-grid-cell-colUnitOfMeasure_OrderLines');
             const unit = unitBlock.textContent;
             const quantityBlock = order.querySelector('.x-grid-cell-colQuantity_OrderLines');
@@ -53,6 +55,7 @@
             const priceBlock = order.querySelector('.x-grid-cell-colPrice_OrderLines');
             const price = Number(priceBlock.textContent.replaceAll(",", ""));
             products.push({
+                productId,
                 productName,
                 unit,
                 quantity,
@@ -68,7 +71,8 @@
             const product = products[i];
             const shipmentPrice = totalShipmentPrice * (product.quantity / totalQuantity);
             const newPrice = product.price + shipmentPrice / product.quantity;
-            const newPriceRounded = Math.round(newPrice * 1000) / 1000;
+            const newPriceRounded = Math.round(newPrice * 10000) / 10000;
+            products[i].updatedPrice = newPriceRounded;
             const resultTr = document.createElement('tr');
             const resultNameTd = document.createElement('td');
             resultNameTd.textContent = product.productName;
@@ -80,10 +84,12 @@
             resultTr.append(resultPriceTd);
             resultTable.querySelector('tbody').append(resultTr);
         }
-        console.log(products);
+
+        return products;
     }
 
     function includeShipment () {
+        let products = [];
         GM.xmlHttpRequest({
             method: 'GET',
             url: `${API_URL}/cin7/shipments`,
@@ -130,7 +136,10 @@
                             selectedShipmentPKs.includes(shipment.PK));
 
                         const totalShipmentPrice = selectedShipments.reduce((acc, shipment) => acc + shipment.price, 0) / 100;
-                        includeShipmentPrice(totalShipmentPrice, resultTable);
+                        products = includeShipmentPrice(totalShipmentPrice, resultTable);
+                        console.log(products);
+                        const applyButton = document.getElementById('calApplyButton');
+                        applyButton.style.display = 'block';
 
                         return false;
                     });
@@ -249,32 +258,72 @@
                     includeButton.value = 'Calculate';
                     includeButton.type = 'submit';
                     includeButton.className = 'btn btn-primary';
-                    const saveButton = document.createElement('button');
-                    saveButton.textContent = 'Save';
-                    saveButton.className = 'btn btn-outline';
-                    saveButton.addEventListener('click', (e) => {
+                    const applyButton = document.createElement('button');
+                    applyButton.id = 'calApplyButton';
+                    applyButton.textContent = 'Apply';
+                    applyButton.className = 'btn btn-outline';
+                    applyButton.style.display = 'none';
+                    applyButton.addEventListener('click', (e) => {
                         e.preventDefault();
-                        // get selected checkbox
-                        const checkboxes = form.querySelectorAll('input[name="shipment"]');
-                        for (const checkbox of checkboxes) {
-                            if (checkbox.checked) {
-                                const shipmentPK = checkbox.value;
-                                // delete shipment
-                                GM.xmlHttpRequest({
-                                    method: 'DELETE',
-                                    url: `${API_URL}/cin7/shipment/${shipmentPK.split('#')[1]}`,
-                                    onload: function (response) {
-                                        console.log(response);
-                                        if (response.status === 200) {
-                                            checkbox.parentElement.parentElement.remove();
-                                        }
-                                    },
-                                });
-                            }
+
+                        const taskId = document?.getElementById('IDToUpload')?.value;
+                        if (!taskId) {
+                            alert('Please save the order first');
+                            return;
                         }
 
-                        alert('Saved');
-                        dialog.close();
+                        if (products.length === 0) {
+                            alert('Please calculate first');
+                            return;
+                        }
+
+                        const body = {
+                            products,
+                        }
+
+                        GM.xmlHttpRequest({
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            url: `${API_URL}/cin7/purchase-order/${taskId}`,
+                            data: JSON.stringify(body),
+                            onload: function (response) {
+                                console.log(response);
+                                if (response.status === 200) {
+                                    // get selected checkbox
+                                    const checkboxes = form.querySelectorAll('input[name="shipment"]');
+                                    for (const checkbox of checkboxes) {
+                                        if (checkbox.checked) {
+                                            const shipmentPK = checkbox.value;
+                                            // delete shipment
+                                            GM.xmlHttpRequest({
+                                                method: 'DELETE',
+                                                url: `${API_URL}/cin7/shipment/${shipmentPK.split('#')[1]}`,
+                                                onload: function (response) {
+                                                    console.log(response);
+                                                    if (response.status === 200) {
+                                                        checkbox.parentElement.parentElement.remove();
+                                                    }
+                                                },
+                                            });
+                                        }
+                                    }
+
+                                    alert('Done, page will be reloaded');
+                                    window.location.reload();
+                                } else {
+                                    const message = JSON.parse(response.response).message;
+                                    alert(message || 'Error, please try again or contact support');
+                                }
+                            },
+                            onerror: function (response) {
+                                const message = JSON.parse(response.response).message;
+                                alert(message || 'Error, please try again or contact support');
+                            }
+                        });
+
+                        dialog.remove();
                     });
 
 
@@ -283,10 +332,10 @@
                     cancelButton.className = 'btn btn-outline';
                     cancelButton.addEventListener('click', (e) => {
                         e.preventDefault();
-                        dialog.close();
+                        dialog.remove();
                     });
                     buttonGroup.append(includeButton);
-                    buttonGroup.append(saveButton);
+                    buttonGroup.append(applyButton);
                     buttonGroup.append(cancelButton);
 
                     form.append(table);
@@ -423,7 +472,7 @@
         const cancelButton = document.createElement('button');
         cancelButton.className = 'btn btn-outline'
         cancelButton.textContent = 'Cancel';
-        cancelButton.addEventListener('click', (e) => {e.preventDefault(); dialog.close();});
+        cancelButton.addEventListener('click', (e) => {e.preventDefault(); dialog.remove();});
         buttonGroup.append(confirmButton);
         buttonGroup.append(cancelButton);
 
@@ -447,7 +496,7 @@
            }
 
            alert('Done');
-           dialog.close();
+           dialog.remove();
            return false;
         });
 
