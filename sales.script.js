@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cin7 show today's total sales
 // @namespace    https://bcosys.world/
-// @version      2024-02-14
+// @version      2024-03-07
 // @description  try to take over the world!
 // @author       Yihui Liu
 // @match        https://inventory.dearsystems.com/SaleList
