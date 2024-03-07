@@ -46,7 +46,12 @@
     function calculateSales () {
         const today = new Date();
         // mm/dd/yyyy
-        const dateOfToday = today.toLocaleDateString('en-US');
+        const dateOfToday = today.toLocaleDateString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            year: 'numeric'
+        });
+        console.log('dateOfToday', dateOfToday);
         const sales = document.querySelectorAll('#SaleList_Index_GeneralContainer .x-grid-body .x-grid-row');
         const total = Array.from(sales).filter(sale => sale.querySelector('.colOrderDateG').textContent.includes(dateOfToday))
             .reduce((acc, sale) => {
