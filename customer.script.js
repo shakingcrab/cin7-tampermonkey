@@ -8,7 +8,6 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=dearsystems.com
 // @grant        GM.xmlHttpRequest
 // @connect      *
-// @require      file:///Users/yihuiliu/WebstormProjects/tampermonkey-script/customer.script.js
 // ==/UserScript==
 
 (function() {
